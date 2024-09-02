@@ -2,9 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 receivers:
-  otlp:
+  otlp:  ## oltp reciver is installed in docker compose and port is oppened in compose file to recive data  
     protocols:
-      grpc:
+      grpc:  ## otlp receiver is configured to receive data over gRPC & http at the endpoint mentioned 
         endpoint: ${env:OTEL_COLLECTOR_HOST}:${env:OTEL_COLLECTOR_PORT_GRPC}
       http:
         endpoint: ${env:OTEL_COLLECTOR_HOST}:${env:OTEL_COLLECTOR_PORT_HTTP}
@@ -12,15 +12,20 @@ receivers:
           allowed_origins:
             - "http://*"
             - "https://*"
-  httpcheck/frontendproxy:
-    targets:
+            
+  httpcheck/frontendproxy:  ## frondend proxy used to 
+    targets:  ## httpcheck reciver used to check the health of the frontendproxy service by periodically sending requests to it and verifying its responses.
       - endpoint: http://frontendproxy:${env:ENVOY_PORT}
-  docker_stats:
+      
+  docker_stats:  ## The docker_stats receiver collects Docker container statistics by connecting to the Docker socket at unix:///var/run/docker.sock 
+  ##unix socket- The Docker daemon exposes a Unix socket (/var/run/docker.sock) that allows communication with the Docker API providing a way to interact with Docker without needing to expose an HTTP endpoint.
     endpoint: unix:///var/run/docker.sock
-  redis:
+    
+  redis:  ## used in cart service in docker compose file
     endpoint: "valkey-cart:6379"
     username: "valkey"
     collection_interval: 10s
+    
   # Host metrics
   hostmetrics:
     root_path: /hostfs
