@@ -115,7 +115,7 @@ exporters:  ## Exporters send & store the processed data to various backends as 
         insecure: true
 
 processors:
-  batch:     ##( batch processing mainly for logs and metrics)
+  batch:     ##(mainly for logs and metrics which batches data before exporting it, which helps in reducing the number of requests sent to the exporters)
   transform:  ## mainly for traces data
     error_mode: ignore
     trace_statements:
@@ -126,7 +126,7 @@ processors:
           - replace_match(name, "GET /api/products/*", "GET /api/products/{productId}")
 
 connectors:
-  spanmetrics:   ## collects metrics from span-traces, it acts as both reciver and exporter
+  spanmetrics:   ## collects metrics from span-traces (such as request latency to be derived from traces) it acts as both reciver and exporter
 ## exporter for traces data-  when otlp-col send traces data to span metrics
 ## reciver for metrics data - when it scraps metrics from traces send by otlp-col
 
