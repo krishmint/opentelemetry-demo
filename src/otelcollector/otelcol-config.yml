@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 receivers:
-  otlp:  ## oltp reciver is installed in docker compose and port is oppened in compose file to recive data  
+  otlp:  ## oltp collector is installed in docker compose and port is exposed in compose file to recive data  
     protocols:
       grpc:  ## otlp receiver is configured to receive data over gRPC & http at the endpoint mentioned 
         endpoint: ${env:OTEL_COLLECTOR_HOST}:${env:OTEL_COLLECTOR_PORT_GRPC}
@@ -84,35 +84,39 @@ receivers:
         mute_process_exe_error: true
         mute_process_io_error: true
         mute_process_user_error: true
-  # Collector metrics
+        
+  # Collector metrics ####
   prometheus:
     config:
-      scrape_configs:
+      scrape_configs:    ###Scrapes metrics from the OpenTelemetry collector itself at 0.0.0.0:8888 every 10 seconds.
         - job_name: 'otelcol'
           scrape_interval: 10s
           static_configs:
             - targets: ['0.0.0.0:8888']
 
-exporters:
+exporters:  ## Exporters send & store the processed data to various backends as jaeger, opensearch promotheus.
   debug:
-  otlp:
-    endpoint: "jaeger:4317"
+  
+  otlp:     ## Sends data to a Jaeger(traces) instance at jaeger:4317  with insecure TLS settings.
+    endpoint: "jaeger:4317"   
     tls:
       insecure: true
-  otlphttp/prometheus:
+      
+  otlphttp/prometheus: ## otlp-http send metrics data to prometheus 
     endpoint: "http://prometheus:9090/api/v1/otlp"
     tls:
       insecure: true
-  opensearch:
-    logs_index: otel
+      
+  opensearch:   ##act as exporter for logs data 
+    logs_index: otel   ## This parameter defines the name of the index in OpenSearch where the logs will be stored. 
     http:
       endpoint: "http://opensearch:9200"
       tls:
         insecure: true
 
 processors:
-  batch:
-  transform:
+  batch:     ##( batch processing mainly for logs and metrics)
+  transform:  ## mainly for traces data
     error_mode: ignore
     trace_statements:
       - context: span
@@ -122,14 +126,16 @@ processors:
           - replace_match(name, "GET /api/products/*", "GET /api/products/{productId}")
 
 connectors:
-  spanmetrics:
+  spanmetrics:   ## collects metrics from span-traces, it acts as both reciver and exporter
+## exporter for traces data-  when otlp-col send traces data to span metrics
+## reciver for metrics data - when it scraps metrics from traces send by otlp-col
 
 service:
   pipelines:
     traces:
       receivers: [otlp]
       processors: [transform, batch]
-      exporters: [otlp, debug, spanmetrics]
+      exporters: [otlp, debug, spanmetrics]   ###  here Otlp exporter means jeager 
     metrics:
       receivers: [hostmetrics, docker_stats, httpcheck/frontendproxy, otlp, prometheus, redis, spanmetrics]
       processors: [batch]
